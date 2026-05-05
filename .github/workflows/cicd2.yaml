@@ -1,36 +1,30 @@
-# This is a basic workflow to help you get started with Actions
+name: cicd
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      -deploy-to-ec2
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout Source
+        uses: actions/checkout@v3
+      - name: Login to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build Docker Image
+        run: docker build -t intergrationninjas-react-app
+      - name: Publish image to docker Hub
+        run: docker push intergrationninjas-react-app:latest
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+  deploy: 
+    needs: build
+    runs-on: aws-ec2
+    steps:
+      - name: Pull image from docker Hub
+        run: docker pull intergrationninjas-react-app:latest
+      - name: Delete Old Container
+        run: docker rm -f reactContainer
+      - name: Run docker Container
+        run: docker run -d -p 8000:80 --name reactContainer intergrationninjas-react-app
