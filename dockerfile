@@ -5,19 +5,18 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Alpine uses apk, not apt-get.
-# Installs xz 5.8.3-r0 or higher if available in the Alpine repo.
+# Install system + Python dependencies in ONE layer
 RUN apk update && apk add --no-cache \
     gcc \
     musl-dev \
     postgresql-dev \
-    xz>=5.8.3-r0
+    xz>=5.8.3-r0 \
+    && pip install --upgrade pip \
+    && pip install --no-cache-dir gunicorn
 
 COPY requirements.txt /app/
 
-RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install gunicorn
 
 COPY . /app/
 
