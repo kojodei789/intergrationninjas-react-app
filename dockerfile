@@ -1,14 +1,17 @@
-FROM python:3.15-rc-alpine3.23
+FROM python:3.12-alpine3.23
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
+# Alpine uses apk, not apt-get.
+# Installs xz 5.8.3-r0 or higher if available in the Alpine repo.
+RUN apk update && apk add --no-cache \
     gcc \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+    musl-dev \
+    postgresql-dev \
+    xz>=5.8.3-r0
 
 COPY requirements.txt /app/
 
